@@ -31,20 +31,20 @@ async function apiRequest(endpoint, payload = {}, method = 'POST') {
 app.get('/', async (req, res) => {
   const reference = (req.query.name || 'agent') + Math.floor(Math.random() * 999 + 1)
   const {subscriber_id, token} = await apiRequest('/api/fabric/subscribers/tokens', { reference })
-  res.render('index', {subscriber_id, token, reference});
+  res.render('index', {subscriber_id, token, reference, destination: process.env.AGENT_RESOURCE});
 });
 
 app.get("/public", async (req, res) => {
-  console.log('Public request', process.env.DESTINATION_RESOURCE);
+  console.log('Public request', process.env.CUSTOMER_RESOURCE_ID);
   var payload = { 
-    allowed_addresses: [process.env.DESTINATION_RESOURCE]
+    allowed_addresses: [process.env.CUSTOMER_RESOURCE_ID]
   }
   console.log(payload);
   const {subscriber_id, token} = await apiRequest('/api/fabric/guests/tokens', payload)
   // const reference = (req.query.name || 'guest') + Math.floor(Math.random() * 999 + 1)
   // const {subscriber_id, token} = await apiRequest('/api/fabric/subscribers/tokens', { reference })
   // console.log(subscriber_id, token);
-  res.render('public', {subscriber_id, token});
+  res.render('public', {subscriber_id, token, destination: process.env.CUSTOMER_RESOURCE});
 });
 
 app.get("/sse", async (req, res) => {
