@@ -16,6 +16,29 @@ A minimalist contact center application built with SignalWire Call Fabric, demon
 - SignalWire Account ([Sign up here](https://signalwire.com/signup))
 - Node.js installed on your system
 - npm (Node Package Manager)
+- ngrok ([https://ngrok.com/](https://ngrok.com/)) or similar tunneling service
+
+## SignalWire Dashboard
+
+You need to set up two resources as CXML scripts. One will point to the public-facing side, the other will point to your agent-specific handler.
+Via `ngrok`, find out what your address is for the local machine, you will use it to set up the handlers
+
+In your dashboard, click `Resources`, `Add New`, `Script`, `CXML Script`, then fill out as follows (use your tunnel address) to create your agent endpoint.
+
+<img width="1264" alt="image" src="https://github.com/user-attachments/assets/a30fea1a-6043-445c-a19d-7b9465da3bab" />
+
+On the newly created resource page, click on `Addresses` and make a note of the assigned address (in the screenshot, `/public/agent-resource`.
+
+<img width="1087" alt="image" src="https://github.com/user-attachments/assets/a58360ba-6157-484c-8210-1d3c04b5b3f3" />
+
+
+Create another resource for the public endpoint using `https://<yourtunnel>.ngrok.io` as the address, and again, on the following screen, click on `Addresses`.
+This time, click on the first address and on the next screen, note the address ID.
+
+<img width="1091" alt="image" src="https://github.com/user-attachments/assets/61111e4e-7d08-4b4d-92bb-899c3bf6b4a1" />
+
+You now have created two resources, you have the address for the agent one, and the address and its ID of the customer one. The ID will be used to create the secure token to allow the guest caller to only call that resource.
+
 
 ## Setup
 
@@ -32,14 +55,16 @@ cd cf-cc-mini
 npm install
 ```
 
-3. Create a `.env` file in the root directory with your SignalWire credentials:
+3. Create a `.env` file in the root directory with your SignalWire credentials and the information from above (your values will vary)
 
 ```
 # .env
 SIGNALWIRE_PROJECT_KEY=your_project_key
 SIGNALWIRE_TOKEN=your_token
-SIGNALWIRE_SPACE=your_space.signalwire.com
-DESTINATION_RESOURCE=/public/agent-handler
+SIGNALWIRE_SPACE=<your_space>.signalwire.com
+AGENT_RESOURCE=/public/agent-handler
+CUSTOMER_RESOURCE=/public/customer-handler
+CUSTOMER_RESOURCE_ID=af9d4ac4-12d4-4068-82f3-2112ee452c24
 ```
 
 4. Start the application:
