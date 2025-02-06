@@ -11,6 +11,15 @@ A minimalist contact center application built with SignalWire Call Fabric, demon
 - Server-Sent Events (SSE) for real-time status updates
 - Basic call controls (answer, reject, hangup)
 
+
+## How  does it work?
+
+Agents are connected using the Call Fabric SDK and join a conference.
+
+Customers are connected using the Call Fabric SDK and join the same conference.
+
+The token that is generated for the customer is scoped to the customer resource, so they can only call the customer resource.
+
 ## Prerequisites
 
 - SignalWire Account ([Sign up here](https://signalwire.com/signup))
@@ -72,4 +81,23 @@ CUSTOMER_RESOURCE_ID=af9d4ac4-12d4-4068-82f3-2112ee452c24
 ```bash
 node index.js
 ```
+
+6. Visit the agent endpoint in your browser:
+
+```
+http://localhost:3000
+```
+
+Click on `Start session` and wait for the call to connect.
+
+5. Visit the public endpoint in your browser:
+
+```
+http://localhost:3000/public
+```
+
+Click on `Call Us` and wait for the call to connect.
+
+
+
 
