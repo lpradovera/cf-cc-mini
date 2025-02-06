@@ -53,7 +53,7 @@ app.get("/sse", async (req, res) => {
 });
 
 app.post("/agent", async (req, res) => {
-  console.log('Agent request');
+  console.log('Agent request', req.body);
   res.type('application/xml');
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
