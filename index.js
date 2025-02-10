@@ -4,34 +4,29 @@ let app = express();
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
-const axios = require('axios');
+
+const { apiRequest } = require('./lib/api');
 app.use(express.static('public'))
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "ALLOW-FROM https://signalwire.com");
   next();
 });
 
+window = {};
+
 const staticConference = '4567'+ Math.floor(Math.random() * 999 + 1);
 
 let {createSession, createChannel} = require("better-sse");
 const channel = createChannel();
-
-async function apiRequest(endpoint, payload = {}, method = 'POST') {
-  var url = `https://${process.env.SIGNALWIRE_SPACE}${endpoint}`
-
-  resp = await axios.post(url, payload, {
-    auth: {
-      username: process.env.SIGNALWIRE_PROJECT_KEY,
-      password: process.env.SIGNALWIRE_TOKEN
-    }
-  })
-  return resp.data
-}
+const chat = require('./lib/chat');
+chat.initializeChat();
 
 app.get('/', async (req, res) => {
-  const reference = (req.query.name || 'agent') + Math.floor(Math.random() * 999 + 1)
+  const reference = req.query.name || ('agent' + Math.floor(Math.random() * 9999 + 1))
   const {subscriber_id, token} = await apiRequest('/api/fabric/subscribers/tokens', { reference })
-  res.render('index', {subscriber_id, token, reference, destination: process.env.AGENT_RESOURCE});
+  res.render('index', {subscriber_id, token, reference, 
+    destination: process.env.AGENT_RESOURCE,
+    chatServerId: process.env.CHAT_SERVER_ID});
 });
 
 app.get("/public", async (req, res) => {

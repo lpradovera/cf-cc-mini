@@ -27,12 +27,15 @@ async function connect() {
 
   console.log('Connecting to SignalWire with token:', _token);
   console.log('Client connected:', _client);
-  // await _client.connect();
 
   _client.online({
     incomingCallHandlers: { all: _incomingCallNotification },
   });
   
+
+  await _client.conversation.subscribe((newMsg) => {
+    console.log('New message received!', newMsg)
+  });
   console.log('Connected to SignalWire');
 }
 
@@ -105,6 +108,16 @@ function resetUI() {
   callControls.style.display = 'none';
   waitingCard.style.display = 'none';
   contactForm.style.display = 'none';
+}
+
+async function sendMessage() {
+  const message = document.getElementById('chatInput').value;
+  const payload = {
+    addressId: _chatServerId,
+    text: message
+  }
+  console.log('Sending message', payload);
+  await _client.conversation.sendMessage(payload);
 }
 
 ready(async function() {
