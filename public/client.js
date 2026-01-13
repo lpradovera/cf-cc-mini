@@ -148,6 +148,7 @@ ready(async function() {
       console.log('Participant joined');
       if (!_my_call_id) {
         _my_call_id = msg.CallSid;
+        aiAgentControls.style.display = 'block';
       } else {
         waitingCard.style.display = 'none';
         contactForm.style.display = 'block';

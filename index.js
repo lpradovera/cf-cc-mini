@@ -5,6 +5,8 @@ app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 const axios = require('axios');
+const http = require('http');
+const { WebSocketServer } = require('ws');
 app.use(express.static('public'))
 app.use((req, res, next) => {
   res.setHeader("X-Frame-Options", "ALLOW-FROM https://signalwire.com");
@@ -67,7 +69,7 @@ app.post("/agent", async (req, res) => {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
 <Dial>
-  <Conference statusCallback="https://${req.headers.host}/conference" statusCallbackEvent="start end join leave">${staticConference}</Conference>
+  <Conference statusCallback="https://${req.headers.host}/conference" statusCallbackEvent="start end join leave" endConferenceOnExit="true">${staticConference}</Conference>
 </Dial>
 </Response>`
   res.send(xml);
@@ -103,7 +105,7 @@ app.post("/conference", async (req, res) => {
 app.post("/add-ai-agent", async (req, res, next) => {
   try {
     const sipAddress = req.body.sipAddress || process.env.AI_SIP_ADDRESS;
-    const streamUrl = 'wss://your-websocket-server.example.com/stream';
+    const streamUrl = `wss://${process.env.STREAM_HOST}/stream`;
 
     const laml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
@@ -137,6 +139,52 @@ app.post("/add-ai-agent", async (req, res, next) => {
   }
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server running on port 3000");
-})
+const server = http.createServer(app);
+
+const wss = new WebSocketServer({ server, path: '/stream' });
+
+wss.on('connection', (ws) => {
+  console.log('WebSocket client connected to /stream');
+  let streamSid = null;
+
+  ws.on('message', (data) => {
+    try {
+      const message = JSON.parse(data);
+
+      switch (message.event) {
+        case 'connected':
+          console.log('Stream connected');
+          break;
+        case 'start':
+          streamSid = message.start.streamSid;
+          console.log('Stream started:', streamSid);
+          break;
+        case 'media':
+          // Echo audio back after 500ms delay
+          const payload = message.media.payload;
+          setTimeout(() => {
+            if (ws.readyState === ws.OPEN && streamSid) {
+              ws.send(JSON.stringify({
+                event: 'media',
+                streamSid: streamSid,
+                media: { payload }
+              }));
+            }
+          }, 500);
+          break;
+        case 'stop':
+          console.log('Stream stopped');
+          break;
+      }
+    } catch (err) {
+      console.error('WebSocket message error:', err);
+    }
+  });
+
+  ws.on('close', () => console.log('WebSocket disconnected'));
+  ws.on('error', (err) => console.error('WebSocket error:', err));
+});
+
+server.listen(process.env.PORT || 3000, () => {
+  console.log("Server running on port " + (process.env.PORT || 3000));
+});
