@@ -34,8 +34,9 @@ async function hangupCall() {
 
 async function makeCall() {
   await connect();
+  console.log('Making call to', document.getElementById('destination').value);
   _call = await _client.dial({
-    to: document.getElementById('destination').value,
+    to: document.getElementById('destination').value + "?foo=1234",
     logLevel: 'debug',
     debug: { logWsTraffic: true },
     rootElement: document.getElementById('rootElement')

@@ -28,28 +28,37 @@ async function apiRequest(endpoint, payload = {}, method = 'POST') {
   return resp.data
 }
 
-app.get('/', async (req, res) => {
-  const reference = (req.query.name || 'agent') + Math.floor(Math.random() * 999 + 1)
-  const {subscriber_id, token} = await apiRequest('/api/fabric/subscribers/tokens', { reference })
-  res.render('index', {subscriber_id, token, reference, destination: process.env.AGENT_RESOURCE});
-});
-
-app.get("/public", async (req, res) => {
-  console.log('Public request', process.env.CUSTOMER_RESOURCE_ID);
-  var payload = { 
-    allowed_addresses: [process.env.CUSTOMER_RESOURCE_ID]
+app.get('/', async (req, res, next) => {
+  try {
+    const reference = (req.query.name || 'agent') + Math.floor(Math.random() * 999 + 1)
+    const {subscriber_id, token} = await apiRequest('/api/fabric/subscribers/tokens', { reference })
+    res.render('index', {subscriber_id, token, reference, destination: process.env.AGENT_RESOURCE});
+  } catch (err) {
+    next(err);
   }
-  console.log(payload);
-  const {subscriber_id, token} = await apiRequest('/api/fabric/guests/tokens', payload)
-  // const reference = (req.query.name || 'guest') + Math.floor(Math.random() * 999 + 1)
-  // const {subscriber_id, token} = await apiRequest('/api/fabric/subscribers/tokens', { reference })
-  // console.log(subscriber_id, token);
-  res.render('public', {subscriber_id, token, destination: process.env.CUSTOMER_RESOURCE});
 });
 
-app.get("/sse", async (req, res) => {
-	const session = await createSession(req, res);
-	channel.register(session);
+app.get("/public", async (req, res, next) => {
+  try {
+    console.log('Public request');
+    var payload = {
+      allowed_addresses: [process.env.CUSTOMER_RESOURCE_ID]
+    }
+    console.log(payload);
+    const {subscriber_id, token} = await apiRequest('/api/fabric/guests/tokens', payload)
+    res.render('public', {subscriber_id, token, destination: process.env.CUSTOMER_RESOURCE});
+  } catch (err) {
+    next(err);
+  }
+});
+
+app.get("/sse", async (req, res, next) => {
+  try {
+    const session = await createSession(req, res);
+    channel.register(session);
+  } catch (err) {
+    next(err);
+  }
 });
 
 app.post("/agent", async (req, res) => {
@@ -65,7 +74,7 @@ app.post("/agent", async (req, res) => {
 });
 
 app.post("/customer", async (req, res) => {
-  console.log('Customer request');
+  console.log('Customer request', req.query, req.body);
   res.type('application/xml');
   res.send(`<?xml version="1.0" encoding="UTF-8"?>
 <Response>
