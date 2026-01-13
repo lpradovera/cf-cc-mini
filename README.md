@@ -98,6 +98,56 @@ http://localhost:3000/public
 
 Click on `Call Us` and wait for the call to connect.
 
+## Audio Stream WebSocket
 
+The application includes a WebSocket endpoint at `/stream` that can receive audio streams from SignalWire's LAML `<Stream>` element. This is used by the "Add AI Agent" feature to stream call audio.
 
+### How It Works
+
+1. When you click "Add AI Agent" during a call, the application initiates a new call using LAML with a `<Stream>` element
+2. SignalWire connects to the WebSocket endpoint and sends audio in real-time
+3. The current implementation echoes the audio back with a 500ms delay (for testing purposes)
+
+### WebSocket Protocol
+
+The endpoint handles SignalWire's stream protocol:
+- `connected` - Initial connection established
+- `start` - Stream metadata (contains `streamSid`)
+- `media` - Audio data (base64-encoded μ-law 8kHz audio)
+- `stop` - Stream ending
+
+### Configuration
+
+Add the following to your `.env` file:
+
+```
+STREAM_HOST=your-domain.ngrok.io
+```
+
+This should be the publicly accessible hostname where your server is running (e.g., your ngrok tunnel domain). The application will construct the WebSocket URL as `wss://${STREAM_HOST}/stream`.
+
+### Complete Environment Variables
+
+```
+# .env
+SIGNALWIRE_PROJECT_KEY=your_project_key
+SIGNALWIRE_TOKEN=your_token
+SIGNALWIRE_SPACE=<your_space>.signalwire.com
+AGENT_RESOURCE=/public/agent-handler
+CUSTOMER_RESOURCE=/public/customer-handler
+CUSTOMER_RESOURCE_ID=af9d4ac4-12d4-4068-82f3-2112ee452c24
+AI_SIP_ADDRESS=sip:your-ai-agent@your-space.signalwire.com
+STREAM_HOST=your-domain.ngrok.io
+```
+
+| Variable | Description |
+|----------|-------------|
+| `SIGNALWIRE_PROJECT_KEY` | Your SignalWire project key |
+| `SIGNALWIRE_TOKEN` | Your SignalWire API token |
+| `SIGNALWIRE_SPACE` | Your SignalWire space domain |
+| `AGENT_RESOURCE` | Path to the agent CXML resource |
+| `CUSTOMER_RESOURCE` | Path to the customer CXML resource |
+| `CUSTOMER_RESOURCE_ID` | UUID of the customer resource (for token scoping) |
+| `AI_SIP_ADDRESS` | SIP address of your AI agent (optional) |
+| `STREAM_HOST` | Public hostname for WebSocket connections |
 
