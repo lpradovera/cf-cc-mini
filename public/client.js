@@ -53,12 +53,41 @@ async function answerCall() {
       video: false
     });
     callControls.style.display = 'block';
+    aiAgentControls.style.display = 'block';
     incomingCall.style.display = 'none';
-    
+
     _call.on('destroy', function() {
       console.log('Call ended');
       _call = null;
     });
+  }
+}
+
+async function addAiAgent() {
+  const sipAddress = document.getElementById('aiSipAddress').value;
+  const statusEl = document.getElementById('aiAgentStatus');
+
+  statusEl.innerHTML = '<span class="text-info">Adding AI agent...</span>';
+
+  try {
+    const response = await fetch('/add-ai-agent', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ sipAddress })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      statusEl.innerHTML = '<span class="text-success">AI agent added successfully!</span>';
+    } else {
+      statusEl.innerHTML = '<span class="text-danger">Failed to add AI agent</span>';
+    }
+  } catch (err) {
+    console.error('Error adding AI agent:', err);
+    statusEl.innerHTML = '<span class="text-danger">Error: ' + err.message + '</span>';
   }
 }
 
@@ -103,8 +132,10 @@ async function makeCall() {
 function resetUI() {
   dialControls.style.display = 'block';
   callControls.style.display = 'none';
+  aiAgentControls.style.display = 'none';
   waitingCard.style.display = 'none';
   contactForm.style.display = 'none';
+  document.getElementById('aiAgentStatus').innerHTML = '';
 }
 
 ready(async function() {

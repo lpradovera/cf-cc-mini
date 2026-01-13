@@ -29,6 +29,21 @@
       <div id="callControls" style="display: none;" class="mt-3">
         <button class="btn btn-danger" onclick="hangupCall()">Hangup</button>
       </div>
+      <div id="aiAgentControls" style="display: none;" class="mt-3">
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0">Add AI Agent</h6>
+          </div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label for="aiSipAddress" class="form-label small">SIP Address</label>
+              <input type="text" id="aiSipAddress" class="form-control form-control-sm" value="<%= aiSipAddress %>">
+            </div>
+            <button class="btn btn-info btn-sm" onclick="addAiAgent()">Add AI Agent</button>
+            <div id="aiAgentStatus" class="mt-2 small"></div>
+          </div>
+        </div>
+      </div>
       <div id="rootElement"></div>
     </div>
 
