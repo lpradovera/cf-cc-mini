@@ -145,6 +145,24 @@ app.post("/start-recording", async (req, res, next) => {
   }
 });
 
+app.get("/recordings", async (req, res, next) => {
+  try {
+    const url = `https://${process.env.SIGNALWIRE_SPACE}/api/laml/2010-04-01/Accounts/${process.env.SIGNALWIRE_PROJECT_KEY}/Recordings.json`;
+
+    const response = await axios.get(url, {
+      auth: {
+        username: process.env.SIGNALWIRE_PROJECT_KEY,
+        password: process.env.SIGNALWIRE_TOKEN
+      }
+    });
+
+    res.json(response.data);
+  } catch (err) {
+    console.error('Error listing recordings:', err.response?.data || err.message);
+    next(err);
+  }
+});
+
 app.get("/recording/:sid", async (req, res, next) => {
   try {
     const { sid } = req.params;

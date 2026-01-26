@@ -153,6 +153,43 @@ function handleRecordingEvent(msg) {
     };
 
     document.getElementById('recordingIndicator').style.display = 'none';
+
+    // Refresh recordings list
+    loadRecordings();
+  }
+}
+
+async function loadRecordings() {
+  const listEl = document.getElementById('recordingsList');
+  listEl.innerHTML = '<p class="text-muted small">Loading...</p>';
+
+  try {
+    const response = await fetch('/recordings');
+    const data = await response.json();
+
+    if (data.recordings && data.recordings.length > 0) {
+      let html = '<ul class="list-group list-group-flush">';
+      data.recordings.forEach(rec => {
+        const date = new Date(rec.date_created).toLocaleString();
+        const duration = rec.duration || '?';
+        html += `
+          <li class="list-group-item p-2">
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">${date}</small>
+              <span class="badge bg-secondary">${duration}s</span>
+            </div>
+            <a href="/recording/${rec.sid}" class="btn btn-sm btn-outline-success mt-1">Download</a>
+          </li>
+        `;
+      });
+      html += '</ul>';
+      listEl.innerHTML = html;
+    } else {
+      listEl.innerHTML = '<p class="text-muted small">No recordings found</p>';
+    }
+  } catch (err) {
+    console.error('Error loading recordings:', err);
+    listEl.innerHTML = '<p class="text-danger small">Error loading recordings</p>';
   }
 }
 
