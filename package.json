@@ -18,5 +18,9 @@
     "frameguard": "^4.0.0",
     "helmet": "^8.1.0",
     "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nock": "^14.0.10"
   }
 }

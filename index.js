@@ -102,6 +102,71 @@ app.post("/conference", async (req, res) => {
   res.sendStatus(200);
 });
 
+app.post("/recording", async (req, res) => {
+  console.log('Recording callback:', req.body);
+  channel.broadcast({
+    type: 'recording',
+    ...req.body
+  });
+  res.sendStatus(200);
+});
+
+app.post("/start-recording", async (req, res, next) => {
+  try {
+    const { callSid } = req.body;
+
+    if (!callSid) {
+      return res.status(400).json({ success: false, error: 'callSid is required' });
+    }
+
+    const url = `https://${process.env.SIGNALWIRE_SPACE}/api/laml/2010-04-01/Accounts/${process.env.SIGNALWIRE_PROJECT_KEY}/Calls/${callSid}/Recordings.json`;
+
+    const params = new URLSearchParams();
+    params.append('RecordingChannels', 'dual');
+    params.append('RecordingStatusCallback', `https://${req.headers.host}/recording`);
+    params.append('RecordingStatusCallbackMethod', 'POST');
+    params.append('RecordingStatusCallbackEvent', 'completed in-progress');
+
+    const response = await axios.post(url, params, {
+      auth: {
+        username: process.env.SIGNALWIRE_PROJECT_KEY,
+        password: process.env.SIGNALWIRE_TOKEN
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    console.log('Recording started:', response.data);
+    res.json({ success: true, recordingSid: response.data.sid });
+  } catch (err) {
+    console.error('Error starting recording:', err.response?.data || err.message);
+    res.status(500).json({ success: false, error: err.response?.data?.message || err.message });
+  }
+});
+
+app.get("/recording/:sid", async (req, res, next) => {
+  try {
+    const { sid } = req.params;
+    const url = `https://${process.env.SIGNALWIRE_SPACE}/api/laml/2010-04-01/Accounts/${process.env.SIGNALWIRE_PROJECT_KEY}/Recordings/${sid}.mp3`;
+
+    const response = await axios.get(url, {
+      auth: {
+        username: process.env.SIGNALWIRE_PROJECT_KEY,
+        password: process.env.SIGNALWIRE_TOKEN
+      },
+      responseType: 'stream'
+    });
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Disposition', `attachment; filename="recording-${sid}.mp3"`);
+    response.data.pipe(res);
+  } catch (err) {
+    console.error('Error downloading recording:', err.response?.data || err.message);
+    next(err);
+  }
+});
+
 app.post("/add-ai-agent", async (req, res, next) => {
   try {
     const sipAddress = req.body.sipAddress || process.env.AI_SIP_ADDRESS;

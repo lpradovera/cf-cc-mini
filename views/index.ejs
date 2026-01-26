@@ -44,6 +44,27 @@
           </div>
         </div>
       </div>
+      <div id="recordingControls" style="display: none;" class="mt-3">
+        <div class="card">
+          <div class="card-header">
+            <h6 class="mb-0">Call Recording</h6>
+          </div>
+          <div class="card-body">
+            <button id="startRecordingBtn" class="btn btn-warning btn-sm" onclick="startRecording()">
+              Start Recording
+            </button>
+            <div id="recordingIndicator" style="display: none;" class="mt-2">
+              <span class="badge bg-danger">
+                <span class="spinner-grow spinner-grow-sm"></span> REC
+              </span>
+            </div>
+            <button id="downloadRecordingBtn" class="btn btn-success btn-sm mt-2" style="display: none;">
+              Download Recording
+            </button>
+            <div id="recordingStatus" class="mt-2 small"></div>
+          </div>
+        </div>
+      </div>
       <div id="rootElement"></div>
     </div>
 

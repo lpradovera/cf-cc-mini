@@ -3,6 +3,8 @@ var _call = null;
 var _invite = null;
 var _my_call_id = null;
 var _active_call = false;
+var _recording = false;
+var _recording_sid = null;
 const sse = new EventSource("/sse");
 
 function ready(callback) {
@@ -54,6 +56,7 @@ async function answerCall() {
     });
     callControls.style.display = 'block';
     aiAgentControls.style.display = 'block';
+    document.getElementById('recordingControls').style.display = 'block';
     incomingCall.style.display = 'none';
 
     _call.on('destroy', function() {
@@ -88,6 +91,68 @@ async function addAiAgent() {
   } catch (err) {
     console.error('Error adding AI agent:', err);
     statusEl.innerHTML = '<span class="text-danger">Error: ' + err.message + '</span>';
+  }
+}
+
+async function startRecording() {
+  // Try to get call ID from the _call object first, fall back to conference CallSid
+  const callSid = _call?.id || _my_call_id;
+
+  console.log('Starting recording for call:', callSid, '_call?.id:', _call?.id, '_my_call_id:', _my_call_id);
+
+  if (!callSid) {
+    console.error('No active call to record');
+    return;
+  }
+
+  const statusEl = document.getElementById('recordingStatus');
+  statusEl.innerHTML = '<span class="text-info">Starting recording...</span>';
+
+  try {
+    const response = await fetch('/start-recording', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ callSid })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      _recording = true;
+      _recording_sid = data.recordingSid;
+      document.getElementById('startRecordingBtn').style.display = 'none';
+      document.getElementById('recordingIndicator').style.display = 'block';
+      statusEl.innerHTML = '<span class="text-success">Recording in progress</span>';
+    } else {
+      statusEl.innerHTML = '<span class="text-danger">Failed to start recording: ' + data.error + '</span>';
+    }
+  } catch (err) {
+    console.error('Error starting recording:', err);
+    statusEl.innerHTML = '<span class="text-danger">Error: ' + err.message + '</span>';
+  }
+}
+
+function handleRecordingEvent(msg) {
+  const statusEl = document.getElementById('recordingStatus');
+
+  if (msg.RecordingStatus === 'in-progress') {
+    _recording = true;
+    statusEl.innerHTML = '<span class="text-warning">Recording in progress...</span>';
+    document.getElementById('recordingIndicator').style.display = 'block';
+    document.getElementById('startRecordingBtn').style.display = 'none';
+  } else if (msg.RecordingStatus === 'completed') {
+    _recording = false;
+    statusEl.innerHTML = '<span class="text-success">Recording complete (' + msg.RecordingDuration + 's)</span>';
+
+    const downloadBtn = document.getElementById('downloadRecordingBtn');
+    downloadBtn.style.display = 'inline-block';
+    downloadBtn.onclick = function() {
+      window.location.href = '/recording/' + msg.RecordingSid;
+    };
+
+    document.getElementById('recordingIndicator').style.display = 'none';
   }
 }
 
@@ -136,6 +201,15 @@ function resetUI() {
   waitingCard.style.display = 'none';
   contactForm.style.display = 'none';
   document.getElementById('aiAgentStatus').innerHTML = '';
+
+  // Reset recording state
+  _recording = false;
+  _recording_sid = null;
+  document.getElementById('recordingControls').style.display = 'none';
+  document.getElementById('startRecordingBtn').style.display = 'inline-block';
+  document.getElementById('recordingIndicator').style.display = 'none';
+  document.getElementById('downloadRecordingBtn').style.display = 'none';
+  document.getElementById('recordingStatus').innerHTML = '';
 }
 
 ready(async function() {
@@ -149,6 +223,7 @@ ready(async function() {
       if (!_my_call_id) {
         _my_call_id = msg.CallSid;
         aiAgentControls.style.display = 'block';
+        document.getElementById('recordingControls').style.display = 'block';
       } else {
         waitingCard.style.display = 'none';
         contactForm.style.display = 'block';
@@ -161,6 +236,10 @@ ready(async function() {
       if (_active_call) {
         waitingCard.style.display = 'block';
       }
+    }
+
+    if (msg.type === 'recording') {
+      handleRecordingEvent(msg);
     }
   });
 });
