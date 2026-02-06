@@ -124,7 +124,7 @@ async function startRecording() {
       _recording = true;
       _recording_sid = data.recordingSid;
       document.getElementById('startRecordingBtn').style.display = 'none';
-      document.getElementById('recordingIndicator').style.display = 'block';
+      document.getElementById('stopRecordingBtn').style.display = 'inline-block';
       statusEl.innerHTML = '<span class="text-success">Recording in progress</span>';
     } else {
       statusEl.innerHTML = '<span class="text-danger">Failed to start recording: ' + data.error + '</span>';
@@ -135,14 +135,57 @@ async function startRecording() {
   }
 }
 
+async function stopRecording() {
+  if (!_recording_sid) {
+    console.error('No active recording to stop');
+    return;
+  }
+
+  const statusEl = document.getElementById('recordingStatus');
+  statusEl.innerHTML = '<span class="text-info">Stopping recording...</span>';
+
+  try {
+    const response = await fetch('/stop-recording', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ recordingSid: _recording_sid, callSid: _my_call_id || _call?.id })
+    });
+
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error('Non-JSON response from /stop-recording:', text);
+      statusEl.innerHTML = '<span class="text-danger">Server error (status ' + response.status + ')</span>';
+      return;
+    }
+
+    if (data.success) {
+      _recording = false;
+      document.getElementById('stopRecordingBtn').style.display = 'none';
+      document.getElementById('startRecordingBtn').style.display = 'inline-block';
+      statusEl.innerHTML = '<span class="text-success">Recording stopped</span>';
+      loadRecordings();
+    } else {
+      statusEl.innerHTML = '<span class="text-danger">Failed to stop recording: ' + data.error + '</span>';
+    }
+  } catch (err) {
+    console.error('Error stopping recording:', err);
+    statusEl.innerHTML = '<span class="text-danger">Error: ' + err.message + '</span>';
+  }
+}
+
 function handleRecordingEvent(msg) {
   const statusEl = document.getElementById('recordingStatus');
 
   if (msg.RecordingStatus === 'in-progress') {
     _recording = true;
     statusEl.innerHTML = '<span class="text-warning">Recording in progress...</span>';
-    document.getElementById('recordingIndicator').style.display = 'block';
     document.getElementById('startRecordingBtn').style.display = 'none';
+    document.getElementById('stopRecordingBtn').style.display = 'inline-block';
   } else if (msg.RecordingStatus === 'completed') {
     _recording = false;
     statusEl.innerHTML = '<span class="text-success">Recording complete (' + msg.RecordingDuration + 's)</span>';
@@ -153,7 +196,8 @@ function handleRecordingEvent(msg) {
       window.location.href = '/recording/' + msg.RecordingSid;
     };
 
-    document.getElementById('recordingIndicator').style.display = 'none';
+    document.getElementById('stopRecordingBtn').style.display = 'none';
+    document.getElementById('startRecordingBtn').style.display = 'inline-block';
 
     // Refresh recordings list
     loadRecordings();
@@ -245,7 +289,7 @@ function resetUI() {
   _recording_sid = null;
   document.getElementById('recordingControls').style.display = 'none';
   document.getElementById('startRecordingBtn').style.display = 'inline-block';
-  document.getElementById('recordingIndicator').style.display = 'none';
+  document.getElementById('stopRecordingBtn').style.display = 'none';
   document.getElementById('downloadRecordingBtn').style.display = 'none';
   document.getElementById('recordingStatus').innerHTML = '';
 }

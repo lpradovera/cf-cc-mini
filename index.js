@@ -145,6 +145,38 @@ app.post("/start-recording", async (req, res, next) => {
   }
 });
 
+app.post("/stop-recording", async (req, res, next) => {
+  try {
+    const { recordingSid, callSid } = req.body;
+
+    if (!recordingSid || !callSid) {
+      return res.status(400).json({ success: false, error: 'recordingSid and callSid are required' });
+    }
+
+    const url = `https://${process.env.SIGNALWIRE_SPACE}/api/laml/2010-04-01/Accounts/${process.env.SIGNALWIRE_PROJECT_KEY}/Calls/${callSid}/Recordings/${recordingSid}.json`;
+
+    const params = new URLSearchParams();
+    params.append('Status', 'stopped');
+
+    await axios.post(url, params, {
+      auth: {
+        username: process.env.SIGNALWIRE_PROJECT_KEY,
+        password: process.env.SIGNALWIRE_TOKEN
+      },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
+    });
+
+    console.log('Recording stopped:', recordingSid);
+    res.json({ success: true });
+  } catch (err) {
+    const errMsg = typeof err.response?.data === 'string' ? err.response.data : (err.response?.data?.message || err.message);
+    console.error('Error stopping recording:', errMsg);
+    res.status(500).json({ success: false, error: errMsg });
+  }
+});
+
 app.get("/recordings", async (req, res, next) => {
   try {
     const url = `https://${process.env.SIGNALWIRE_SPACE}/api/laml/2010-04-01/Accounts/${process.env.SIGNALWIRE_PROJECT_KEY}/Recordings.json`;
