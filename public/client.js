@@ -95,8 +95,9 @@ async function addAiAgent() {
 }
 
 async function startRecording() {
-  // Try to get call ID from the _call object first, fall back to conference CallSid
-  const callSid = _call?.id || _my_call_id;
+  // Use the LAML CallSid from the conference callback (required by the LAML Recording API)
+  // _call?.id is a Fabric ID which the LAML API doesn't recognize
+  const callSid = _my_call_id || _call?.id;
 
   console.log('Starting recording for call:', callSid, '_call?.id:', _call?.id, '_my_call_id:', _my_call_id);
 
